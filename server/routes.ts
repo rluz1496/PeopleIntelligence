@@ -31,12 +31,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Assessments routes
   app.post("/api/assessments", isAuthenticated, async (req, res) => {
     try {
+      // Validar os dados com o schema que aceita strings de data
       const validatedData = insertAssessmentSchema.parse({
         ...req.body,
         createdBy: req.user.id
       });
       
-      const assessment = await storage.createAssessment(validatedData);
+      // Converter strings de data para objetos Date para o armazenamento
+      const assessmentData = {
+        ...validatedData,
+        startDate: new Date(validatedData.startDate),
+        endDate: new Date(validatedData.endDate)
+      };
+      
+      const assessment = await storage.createAssessment(assessmentData);
       
       // Add departments to assessment if provided
       if (req.body.departments && Array.isArray(req.body.departments)) {

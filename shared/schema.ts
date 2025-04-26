@@ -38,10 +38,17 @@ export const assessments = pgTable("assessments", {
   aiPrompt: text("ai_prompt"),
 });
 
-export const insertAssessmentSchema = createInsertSchema(assessments).omit({
-  id: true,
-  createdAt: true,
-});
+// Modificamos o schema para aceitar strings para as datas
+export const insertAssessmentSchema = createInsertSchema(assessments)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    // Aceitamos strings de data ISO, já que é isso que o input type="date" envia
+    startDate: z.string(),
+    endDate: z.string(),
+  });
 
 // Departments table
 export const departments = pgTable("departments", {
