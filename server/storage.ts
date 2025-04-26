@@ -68,6 +68,7 @@ export interface IStorage {
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
+  // Usando a interface Assessment (já adaptada para usar string em vez de Date)
   private assessments: Map<number, Assessment>;
   private departments: Map<number, Department>;
   private assessmentDepartments: Map<string, boolean>; // composite key: assessmentId-departmentId
@@ -158,10 +159,7 @@ export class MemStorage implements IStorage {
     const id = this.assessmentIdCounter++;
     const createdAt = new Date();
     
-    // Garantir que as datas são objetos Date
-    const startDate = new Date(assessmentData.startDate);
-    const endDate = new Date(assessmentData.endDate);
-    
+    // Agora não precisamos mais converter as datas, pois estamos armazenando como strings
     // Garantir que o aiPrompt é sempre string ou null (nunca undefined)
     const aiPrompt = assessmentData.aiPrompt || null;
     
@@ -169,8 +167,8 @@ export class MemStorage implements IStorage {
       id,
       name: assessmentData.name,
       typeId: assessmentData.typeId,
-      startDate,
-      endDate,
+      startDate: assessmentData.startDate, // Agora é string
+      endDate: assessmentData.endDate,     // Agora é string
       createdBy: assessmentData.createdBy,
       createdAt,
       aiPrompt

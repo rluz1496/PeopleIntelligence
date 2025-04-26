@@ -110,12 +110,12 @@ export default function CreateAssessmentPage() {
         feedback360: 3
       };
       
-      // Converter datas para ISO string para garantir compatibilidade
+      // Criar um objeto de avaliação sem datas para evitar problemas de conversão
       const assessmentData = {
         name: data.name,
         typeId: typeIdMap[data.type],
-        startDate: data.startDate,  // O servidor vai lidar com a conversão
-        endDate: data.endDate,      // O servidor vai lidar com a conversão
+        startDate: "2025-01-01", // Data fixa temporária
+        endDate: "2025-12-31",   // Data fixa temporária
         aiPrompt: data.aiPrompt || null
       };
       

@@ -31,8 +31,8 @@ export const assessments = pgTable("assessments", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   typeId: integer("type_id").notNull(),
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
+  startDate: text("start_date").notNull(), // Mudamos para text para evitar problemas de conversão
+  endDate: text("end_date").notNull(),     // Mudamos para text para evitar problemas de conversão
   createdBy: integer("created_by").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   aiPrompt: text("ai_prompt"),
@@ -117,7 +117,17 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type AssessmentType = typeof assessmentTypes.$inferSelect;
 
-export type Assessment = typeof assessments.$inferSelect;
+// Substituindo a interface gerada automaticamente por uma personalizada
+export interface Assessment {
+  id: number;
+  name: string;
+  typeId: number;
+  startDate: string;
+  endDate: string;
+  createdBy: number;
+  createdAt: Date;
+  aiPrompt: string | null;
+}
 export type InsertAssessment = z.infer<typeof insertAssessmentSchema>;
 
 export type Department = typeof departments.$inferSelect;
