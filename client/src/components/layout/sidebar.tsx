@@ -20,9 +20,9 @@ function SidebarItem({ href, icon, children, active }: SidebarItemProps) {
   return (
     <li className="mb-1">
       <Link href={href}>
-        <a
+        <div
           className={cn(
-            "flex items-center px-4 py-3 rounded-lg transition-all",
+            "flex items-center px-4 py-3 rounded-lg transition-all cursor-pointer",
             active 
               ? "text-primary bg-[hsl(var(--sidebar-accent))] font-medium" 
               : "text-gray-600 hover:text-primary hover:bg-[hsl(var(--sidebar-accent))]"
@@ -30,7 +30,7 @@ function SidebarItem({ href, icon, children, active }: SidebarItemProps) {
         >
           <span className="mr-3">{icon}</span>
           {children}
-        </a>
+        </div>
       </Link>
     </li>
   );
