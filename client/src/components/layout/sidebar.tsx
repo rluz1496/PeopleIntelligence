@@ -24,8 +24,8 @@ function SidebarItem({ href, icon, children, active }: SidebarItemProps) {
           className={cn(
             "flex items-center px-4 py-3 rounded-lg transition-all",
             active 
-              ? "text-white bg-[hsl(var(--sidebar-accent))] font-medium" 
-              : "text-gray-400 hover:text-white hover:bg-[hsl(var(--sidebar-accent))]"
+              ? "text-primary bg-[hsl(var(--sidebar-accent))] font-medium" 
+              : "text-gray-600 hover:text-primary hover:bg-[hsl(var(--sidebar-accent))]"
           )}
         >
           <span className="mr-3">{icon}</span>
