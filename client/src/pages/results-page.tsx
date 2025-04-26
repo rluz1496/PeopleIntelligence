@@ -4,11 +4,55 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon, PrintIcon } from "@/components/ui/icons";
+import { AIAnalysisSection } from "@/components/analysis/ai-analysis-section";
+import { useQuery } from "@tanstack/react-query";
+import { Assessment, Response, AnalysisResult, Department, User } from "@shared/schema";
+
+// Interface para os dados retornados pela API de avaliação com campos extras
+interface AssessmentWithDetails extends Assessment {
+  departments: Department[];
+  participants: User[];
+  aiOptions: string[];
+}
 
 export default function ResultsPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
-  const assessmentId = params.id;
+  const assessmentId = params.id ? parseInt(params.id) : 0;
+  
+  // Buscar dados da avaliação
+  const { data: assessment, isLoading: isLoadingAssessment } = useQuery<AssessmentWithDetails>({
+    queryKey: [`/api/assessments/${assessmentId}`],
+    enabled: !!assessmentId && !isNaN(assessmentId),
+  });
+  
+  // Buscar respostas da avaliação
+  const { data: responses, isLoading: isLoadingResponses } = useQuery<Response[]>({
+    queryKey: [`/api/assessments/${assessmentId}/responses`],
+    enabled: !!assessmentId && !isNaN(assessmentId),
+  });
+  
+  // Buscar análises existentes
+  const { data: existingAnalyses, isLoading: isLoadingAnalyses } = useQuery<AnalysisResult[]>({
+    queryKey: [`/api/assessments/${assessmentId}/analysis`],
+    enabled: !!assessmentId && !isNaN(assessmentId),
+  });
+  
+  // Determinar o tipo de avaliação
+  const getAssessmentType = () => {
+    if (!assessment) return "performance";
+    
+    switch (assessment.typeId) {
+      case 1:
+        return "performance";
+      case 2:
+        return "climate";
+      case 3:
+        return "feedback360";
+      default:
+        return "performance";
+    }
+  };
 
   // Sample data for charts
   const departmentData = [
@@ -68,12 +112,19 @@ export default function ResultsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="bg-blue-50 rounded-lg p-4">
                 <h4 className="text-blue-800 text-sm font-medium mb-2">Total de Participantes</h4>
-                <p className="text-blue-900 text-2xl font-bold">52</p>
+                <p className="text-blue-900 text-2xl font-bold">
+                  {responses ? responses.length : 0}
+                </p>
               </div>
 
               <div className="bg-green-50 rounded-lg p-4">
                 <h4 className="text-green-800 text-sm font-medium mb-2">Taxa de Conclusão</h4>
-                <p className="text-green-900 text-2xl font-bold">94%</p>
+                <p className="text-green-900 text-2xl font-bold">
+                  {assessment && assessment.participants ? 
+                    `${Math.round((responses?.length || 0) / assessment.participants.length * 100)}%` : 
+                    "0%"
+                  }
+                </p>
               </div>
 
               <div className="bg-purple-50 rounded-lg p-4">
@@ -82,20 +133,28 @@ export default function ResultsPage() {
               </div>
             </div>
 
-            <div>
-              <h4 className="font-semibold mb-3">Análise da IA</h4>
-              <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-primary">
-                <p className="text-gray-700 mb-3">
-                  A avaliação de desempenho mostra uma melhoria significativa em relação ao período anterior, com aumento de 12% na pontuação média. As equipes de Tecnologia e Marketing apresentaram os melhores resultados, enquanto Vendas mostra oportunidades de desenvolvimento.
+            {/* Nome dinâmico da avaliação */}
+            {assessment && (
+              <div className="mb-6">
+                <h4 className="text-xl font-bold mb-2">
+                  {assessment.name}
+                </h4>
+                <p className="text-gray-600">
+                  {new Date(assessment.startDate).toLocaleDateString('pt-BR')} a {new Date(assessment.endDate).toLocaleDateString('pt-BR')}
                 </p>
-                <p className="text-gray-700">Recomendações principais:</p>
-                <ul className="list-disc list-inside text-gray-700 ml-4 mt-1">
-                  <li>Implementar programa de capacitação para equipe de Vendas</li>
-                  <li>Reconhecer publicamente as conquistas das equipes de alto desempenho</li>
-                  <li>Estabelecer metas mais claras para o próximo ciclo de avaliação</li>
-                </ul>
               </div>
-            </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Seção de Análise IA */}
+        <Card className="bg-white rounded-xl mb-8">
+          <CardContent className="p-6">
+            <AIAnalysisSection 
+              assessmentId={assessmentId}
+              assessmentType={getAssessmentType() as "performance" | "climate" | "feedback360"}
+              hasResponses={!!(responses && responses.length > 0)}
+            />
           </CardContent>
         </Card>
 
