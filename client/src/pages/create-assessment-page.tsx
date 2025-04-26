@@ -90,7 +90,7 @@ const aiAnalysisOptions = [
 ];
 
 export default function CreateAssessmentPage() {
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   
   const form = useForm<AssessmentFormValues>({
@@ -117,12 +117,12 @@ export default function CreateAssessmentPage() {
         feedback360: 3
       };
       
-      // Criar um objeto de avaliação sem datas para evitar problemas de conversão
+      // Criar um objeto de avaliação com as datas do formulário
       const assessmentData = {
         name: data.name,
         typeId: typeIdMap[data.type],
-        startDate: "2025-01-01", // Data fixa temporária
-        endDate: "2025-12-31",   // Data fixa temporária
+        startDate: data.startDate, // Formato yyyy-MM-dd
+        endDate: data.endDate,     // Formato yyyy-MM-dd
         aiPrompt: data.aiPrompt || null
       };
       
