@@ -3,6 +3,10 @@ import { useLocation } from "wouter";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { 
@@ -80,6 +84,7 @@ const aiAnalysisOptions = [
 
 export default function CreateAssessmentPage() {
   const [, navigate] = useLocation();
+  const { toast } = useToast();
   
   const form = useForm<AssessmentFormValues>({
     resolver: zodResolver(assessmentSchema),
@@ -95,10 +100,75 @@ export default function CreateAssessmentPage() {
     },
   });
 
+  // Mutation para criar avaliação
+  const createAssessmentMutation = useMutation({
+    mutationFn: async (data: AssessmentFormValues) => {
+      // Converter tipo e ids para o formato esperado pelo backend
+      const typeIdMap = {
+        performance: 1,
+        climate: 2,
+        feedback360: 3
+      };
+      
+      const assessmentData = {
+        name: data.name,
+        typeId: typeIdMap[data.type],
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
+        aiPrompt: data.aiPrompt || null
+      };
+      
+      // Criar avaliação
+      const response = await apiRequest("POST", "/api/assessments", assessmentData);
+      const createdAssessment = await response.json();
+      
+      if (data.departments && data.departments.length > 0) {
+        // Adicionar departamentos
+        await Promise.all(data.departments.map(deptId => 
+          apiRequest("POST", `/api/assessments/${createdAssessment.id}/departments`, { 
+            departmentId: parseInt(deptId) 
+          })
+        ));
+      }
+      
+      if (data.participants && data.participants.length > 0) {
+        // Adicionar participantes
+        await Promise.all(data.participants.map(userId => 
+          apiRequest("POST", `/api/assessments/${createdAssessment.id}/participants`, { 
+            userId: parseInt(userId) 
+          })
+        ));
+      }
+      
+      if (data.aiAnalysis && data.aiAnalysis.length > 0) {
+        // Adicionar opções de análise IA
+        await Promise.all(data.aiAnalysis.map(optionId => 
+          apiRequest("POST", `/api/assessments/${createdAssessment.id}/ai-options`, { 
+            optionId 
+          })
+        ));
+      }
+      
+      return createdAssessment;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Avaliação criada com sucesso",
+        description: "Agora você pode adicionar respostas e gerar análises.",
+      });
+      navigate(`/results/${data.id}`);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao criar avaliação",
+        description: error.message || "Ocorreu um erro ao criar a avaliação. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  });
+
   function onSubmit(values: AssessmentFormValues) {
-    console.log(values);
-    // Here you would normally save the assessment and navigate to the appropriate page
-    navigate("/");
+    createAssessmentMutation.mutate(values);
   }
 
   return (
@@ -358,14 +428,23 @@ export default function CreateAssessmentPage() {
                 variant="outline"
                 onClick={() => navigate("/")}
                 className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-all"
+                disabled={createAssessmentMutation.isPending}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 className="px-6 py-3 bg-primary hover:bg-secondary text-white rounded-lg font-medium transition-all"
+                disabled={createAssessmentMutation.isPending}
               >
-                Criar Avaliação
+                {createAssessmentMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  "Criar Avaliação"
+                )}
               </Button>
             </div>
           </form>
