@@ -135,7 +135,20 @@ export class MemStorage implements IStorage {
   async createUser(userData: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
     const createdAt = new Date();
-    const user: User = { ...userData, id, createdAt };
+    
+    // Garantir que name e role são sempre string ou null (nunca undefined)
+    const name = userData.name || null;
+    const role = userData.role || null;
+    
+    const user: User = { 
+      id,
+      username: userData.username,
+      password: userData.password,
+      name,
+      role,
+      createdAt
+    };
+    
     this.users.set(id, user);
     return user;
   }
@@ -144,7 +157,25 @@ export class MemStorage implements IStorage {
   async createAssessment(assessmentData: InsertAssessment): Promise<Assessment> {
     const id = this.assessmentIdCounter++;
     const createdAt = new Date();
-    const assessment: Assessment = { ...assessmentData, id, createdAt };
+    
+    // Garantir que as datas são objetos Date
+    const startDate = new Date(assessmentData.startDate);
+    const endDate = new Date(assessmentData.endDate);
+    
+    // Garantir que o aiPrompt é sempre string ou null (nunca undefined)
+    const aiPrompt = assessmentData.aiPrompt || null;
+    
+    const assessment: Assessment = { 
+      id,
+      name: assessmentData.name,
+      typeId: assessmentData.typeId,
+      startDate,
+      endDate,
+      createdBy: assessmentData.createdBy,
+      createdAt,
+      aiPrompt
+    };
+    
     this.assessments.set(id, assessment);
     return assessment;
   }

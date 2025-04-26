@@ -37,14 +37,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: req.user.id
       });
       
-      // Converter strings de data para objetos Date para o armazenamento
-      const assessmentData = {
-        ...validatedData,
-        startDate: new Date(validatedData.startDate),
-        endDate: new Date(validatedData.endDate)
-      };
-      
-      const assessment = await storage.createAssessment(assessmentData);
+      // O método createAssessment da storage agora lida com a conversão de datas internamente
+      const assessment = await storage.createAssessment(validatedData);
       
       // Add departments to assessment if provided
       if (req.body.departments && Array.isArray(req.body.departments)) {
