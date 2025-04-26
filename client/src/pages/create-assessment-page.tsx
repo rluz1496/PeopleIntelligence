@@ -334,25 +334,33 @@ export default function CreateAssessmentPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="block text-gray-700 font-medium mb-2">Participantes Específicos (opcional)</FormLabel>
-                      <Select
-                        multiple
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="w-full h-32 align-top px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                            <SelectValue placeholder="Selecione os participantes" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {participants.map((person) => (
-                            <SelectItem key={person.id} value={String(person.id)}>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {participants.map((person) => (
+                          <FormItem
+                            key={person.id}
+                            className="flex items-center p-3 border border-gray-200 rounded-lg hover:border-primary cursor-pointer transition-all"
+                          >
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(String(person.id))}
+                                onCheckedChange={(checked) => {
+                                  const stringId = String(person.id);
+                                  if (checked) {
+                                    field.onChange([...(field.value || []), stringId]);
+                                  } else {
+                                    field.onChange(
+                                      field.value?.filter((value) => value !== stringId) || []
+                                    );
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="ml-3 cursor-pointer text-gray-800">
                               {person.name} ({person.department})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-sm text-gray-500 mt-2">Segure CTRL para selecionar múltiplos participantes</p>
+                            </FormLabel>
+                          </FormItem>
+                        ))}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
