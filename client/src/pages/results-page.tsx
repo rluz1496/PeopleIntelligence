@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DownloadIcon, PrintIcon } from "@/components/ui/icons";
 import { AIAnalysisSection } from "@/components/analysis/ai-analysis-section";
+import { GenerateTestData } from "@/components/analysis/generate-test-data";
 import { useQuery } from "@tanstack/react-query";
 import { Assessment, Response, AnalysisResult, Department, User } from "@shared/schema";
 
@@ -148,15 +149,28 @@ export default function ResultsPage() {
         </Card>
         
         {/* Seção de Análise IA */}
-        <Card className="bg-white rounded-xl mb-8">
-          <CardContent className="p-6">
-            <AIAnalysisSection 
-              assessmentId={assessmentId}
-              assessmentType={getAssessmentType() as "performance" | "climate" | "feedback360"}
-              hasResponses={!!(responses && responses.length > 0)}
-            />
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="md:col-span-2">
+            <Card className="bg-white rounded-xl h-full">
+              <CardContent className="p-6">
+                <AIAnalysisSection 
+                  assessmentId={assessmentId}
+                  assessmentType={getAssessmentType() as "performance" | "climate" | "feedback360"}
+                  hasResponses={!!(responses && responses.length > 0)}
+                />
+              </CardContent>
+            </Card>
+          </div>
+          <div>
+            <Card className="bg-white rounded-xl h-full">
+              <CardContent className="p-6">
+                <GenerateTestData 
+                  assessmentId={assessmentId} 
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card className="bg-white rounded-xl">

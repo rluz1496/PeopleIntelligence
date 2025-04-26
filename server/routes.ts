@@ -391,6 +391,291 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate test responses for an assessment
+  app.post("/api/assessments/:id/generate-test-responses", isAuthenticated, async (req, res) => {
+    try {
+      const assessmentId = parseInt(req.params.id);
+      const assessment = await storage.getAssessment(assessmentId);
+      
+      if (!assessment) {
+        return res.status(404).json({ message: "Avaliação não encontrada" });
+      }
+      
+      // Check if user is the creator
+      if (assessment.createdBy !== req.user.id) {
+        return res.status(403).json({ message: "Não autorizado a gerar respostas para esta avaliação" });
+      }
+      
+      // Get the participants for this assessment
+      const participants = await storage.getAssessmentParticipants(assessmentId);
+      
+      if (participants.length === 0) {
+        return res.status(400).json({ message: "Não há participantes nesta avaliação" });
+      }
+      
+      const responseCount = req.body.count || 10; // Número de respostas a serem geradas
+      const createdResponses = [];
+      
+      // Determine response format based on assessment type
+      let responseTemplate: any = {};
+      switch (assessment.typeId) {
+        // Performance Assessment
+        case 1:
+          responseTemplate = {
+            performanceScore: { min: 1, max: 10 },
+            skillScores: {
+              communication: { min: 1, max: 10 },
+              leadership: { min: 1, max: 10 },
+              technical: { min: 1, max: 10 },
+              innovation: { min: 1, max: 10 },
+              collaboration: { min: 1, max: 10 }
+            },
+            strengths: [
+              "Comunicação clara e eficaz",
+              "Solução criativa de problemas",
+              "Conhecimento técnico avançado",
+              "Habilidades de liderança",
+              "Trabalho em equipe exemplar",
+              "Pensamento estratégico",
+              "Gerenciamento eficiente de tempo",
+              "Adaptabilidade a novas situações",
+              "Atenção aos detalhes",
+              "Orientação a resultados"
+            ],
+            improvements: [
+              "Melhorar comunicação com outras equipes",
+              "Desenvolver habilidades de apresentação",
+              "Aprimorar conhecimentos técnicos específicos",
+              "Gerenciar melhor o tempo em projetos",
+              "Compartilhar mais conhecimento com a equipe",
+              "Praticar delegação de tarefas",
+              "Melhorar documentação de processos",
+              "Desenvolver habilidades de mentoria",
+              "Equilibrar melhor qualidade e velocidade",
+              "Participar mais ativamente de reuniões"
+            ],
+            comments: [
+              "Tem demonstrado grande progresso nos últimos meses.",
+              "Contribui significativamente para o sucesso da equipe.",
+              "Ainda precisa melhorar em alguns aspectos para alcançar seu potencial.",
+              "Excelente colaborador, sempre disponível para ajudar colegas.",
+              "Trabalho consistente e de alta qualidade.",
+              "Superou as expectativas neste período de avaliação.",
+              "Demonstra iniciativa e pro-atividade em suas atividades.",
+              "Bom trabalho técnico, mas pode melhorar em comunicação.",
+              "Tem grande potencial para crescimento na organização.",
+              "Precisa focar mais nas prioridades estabelecidas."
+            ]
+          };
+          break;
+          
+        // Climate Survey
+        case 2:
+          responseTemplate = {
+            satisfactionScore: { min: 1, max: 10 },
+            categoryScores: {
+              workEnvironment: { min: 1, max: 10 },
+              leadership: { min: 1, max: 10 },
+              benefits: { min: 1, max: 10 },
+              workLifeBalance: { min: 1, max: 10 },
+              careerOpportunities: { min: 1, max: 10 }
+            },
+            positiveAspects: [
+              "Ambiente de trabalho colaborativo",
+              "Lideranças acessíveis e transparentes",
+              "Flexibilidade de horário",
+              "Benefícios competitivos",
+              "Oportunidades de aprendizado",
+              "Cultura inclusiva",
+              "Programa de reconhecimento",
+              "Comunicação clara entre equipes",
+              "Infraestrutura adequada",
+              "Eventos de integração"
+            ],
+            improvementAreas: [
+              "Comunicação entre departamentos",
+              "Plano de carreira mais claro",
+              "Mais feedback sobre desempenho",
+              "Melhorias no pacote de benefícios",
+              "Redução de reuniões desnecessárias",
+              "Mais oportunidades de crescimento",
+              "Processos internos mais eficientes",
+              "Equilíbrio entre vida pessoal e trabalho",
+              "Programas de bem-estar",
+              "Treinamentos específicos para funções"
+            ],
+            suggestions: [
+              "Implementar programa de mentoria interno",
+              "Criar comitê de cultura organizacional",
+              "Oferecer mais cursos e treinamentos",
+              "Realizar mais eventos de integração entre áreas",
+              "Revisar política de promoções",
+              "Criar programa de reconhecimento mensal",
+              "Melhorar comunicação sobre mudanças organizacionais",
+              "Implementar programa de bem-estar",
+              "Oferecer feedback mais frequente",
+              "Criar espaços para compartilhamento de ideias"
+            ]
+          };
+          break;
+        
+        // 360 Feedback
+        case 3:
+          responseTemplate = {
+            overallScore: { min: 1, max: 10 },
+            dimensionScores: {
+              leadership: { min: 1, max: 10 },
+              communication: { min: 1, max: 10 },
+              teamwork: { min: 1, max: 10 },
+              technicalSkills: { min: 1, max: 10 },
+              decisionMaking: { min: 1, max: 10 }
+            },
+            strengths: [
+              "Excelente comunicação interpessoal",
+              "Habilidade de resolver conflitos",
+              "Conhecimento técnico aprofundado",
+              "Capacidade de motivar a equipe",
+              "Pensamento estratégico",
+              "Foco em resultados",
+              "Empatia com colegas",
+              "Organização e planejamento",
+              "Criatividade e inovação",
+              "Adaptabilidade a mudanças"
+            ],
+            developmentAreas: [
+              "Delegação de tarefas",
+              "Comunicação em momentos de pressão",
+              "Gerenciamento do tempo",
+              "Equilíbrio entre qualidade e agilidade",
+              "Compartilhamento de conhecimento",
+              "Lidar com feedbacks negativos",
+              "Priorização de atividades",
+              "Assertividade em reuniões",
+              "Visão de longo prazo",
+              "Paciência com processos"
+            ],
+            feedback: [
+              "Demonstra grande potencial de liderança e inspira a equipe.",
+              "Comunica-se bem, mas poderia melhorar ao lidar com situações de conflito.",
+              "Conhecimento técnico exemplar que beneficia toda a equipe.",
+              "Sempre disponível para ajudar colegas, criando um ambiente colaborativo.",
+              "Organização e planejamento são pontos fortes notáveis.",
+              "Poderia compartilhar mais seu conhecimento com os colegas.",
+              "Excelente em lidar com clientes e stakeholders externos.",
+              "Precisa desenvolver mais habilidades de delegação.",
+              "Contribui significativamente para a inovação na equipe.",
+              "Tem melhorado consistentemente nos últimos meses."
+            ]
+          };
+          break;
+          
+        default:
+          responseTemplate = {
+            score: { min: 1, max: 10 },
+            comment: "Avaliação genérica para teste"
+          };
+      }
+      
+      // Função auxiliar para gerar um número aleatório dentro de um intervalo
+      const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+      
+      // Função auxiliar para selecionar um item aleatório de um array
+      const randomItem = (array: any[]) => array[Math.floor(Math.random() * array.length)];
+      
+      // Função auxiliar para selecionar múltiplos itens aleatórios de um array
+      const randomItems = (array: any[], count: number) => {
+        const shuffled = [...array].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
+      };
+      
+      // Gerar respostas simuladas baseadas no template e tipo de avaliação
+      for (let i = 0; i < Math.min(responseCount, participants.length); i++) {
+        const participant = participants[i];
+        let responseData: any = {};
+        
+        switch (assessment.typeId) {
+          // Performance Assessment
+          case 1:
+            responseData = {
+              performanceScore: randomInt(responseTemplate.performanceScore.min, responseTemplate.performanceScore.max),
+              skillScores: {
+                communication: randomInt(responseTemplate.skillScores.communication.min, responseTemplate.skillScores.communication.max),
+                leadership: randomInt(responseTemplate.skillScores.leadership.min, responseTemplate.skillScores.leadership.max),
+                technical: randomInt(responseTemplate.skillScores.technical.min, responseTemplate.skillScores.technical.max),
+                innovation: randomInt(responseTemplate.skillScores.innovation.min, responseTemplate.skillScores.innovation.max),
+                collaboration: randomInt(responseTemplate.skillScores.collaboration.min, responseTemplate.skillScores.collaboration.max)
+              },
+              strengths: randomItems(responseTemplate.strengths, randomInt(1, 3)),
+              improvements: randomItems(responseTemplate.improvements, randomInt(1, 3)),
+              comment: randomItem(responseTemplate.comments)
+            };
+            break;
+            
+          // Climate Survey
+          case 2:
+            responseData = {
+              satisfactionScore: randomInt(responseTemplate.satisfactionScore.min, responseTemplate.satisfactionScore.max),
+              categoryScores: {
+                workEnvironment: randomInt(responseTemplate.categoryScores.workEnvironment.min, responseTemplate.categoryScores.workEnvironment.max),
+                leadership: randomInt(responseTemplate.categoryScores.leadership.min, responseTemplate.categoryScores.leadership.max),
+                benefits: randomInt(responseTemplate.categoryScores.benefits.min, responseTemplate.categoryScores.benefits.max),
+                workLifeBalance: randomInt(responseTemplate.categoryScores.workLifeBalance.min, responseTemplate.categoryScores.workLifeBalance.max),
+                careerOpportunities: randomInt(responseTemplate.categoryScores.careerOpportunities.min, responseTemplate.categoryScores.careerOpportunities.max)
+              },
+              positiveAspects: randomItems(responseTemplate.positiveAspects, randomInt(1, 3)),
+              improvementAreas: randomItems(responseTemplate.improvementAreas, randomInt(1, 3)),
+              suggestion: randomItem(responseTemplate.suggestions)
+            };
+            break;
+          
+          // 360 Feedback
+          case 3:
+            responseData = {
+              overallScore: randomInt(responseTemplate.overallScore.min, responseTemplate.overallScore.max),
+              dimensionScores: {
+                leadership: randomInt(responseTemplate.dimensionScores.leadership.min, responseTemplate.dimensionScores.leadership.max),
+                communication: randomInt(responseTemplate.dimensionScores.communication.min, responseTemplate.dimensionScores.communication.max),
+                teamwork: randomInt(responseTemplate.dimensionScores.teamwork.min, responseTemplate.dimensionScores.teamwork.max),
+                technicalSkills: randomInt(responseTemplate.dimensionScores.technicalSkills.min, responseTemplate.dimensionScores.technicalSkills.max),
+                decisionMaking: randomInt(responseTemplate.dimensionScores.decisionMaking.min, responseTemplate.dimensionScores.decisionMaking.max)
+              },
+              strengths: randomItems(responseTemplate.strengths, randomInt(1, 3)),
+              developmentAreas: randomItems(responseTemplate.developmentAreas, randomInt(1, 3)),
+              feedback: randomItem(responseTemplate.feedback)
+            };
+            break;
+            
+          default:
+            responseData = {
+              score: randomInt(responseTemplate.score.min, responseTemplate.score.max),
+              comment: responseTemplate.comment
+            };
+        }
+        
+        // Criar a resposta no banco de dados
+        const response = await storage.createResponse({
+          assessmentId,
+          userId: participant.id,
+          data: JSON.stringify(responseData)
+        });
+        
+        createdResponses.push(response);
+      }
+      
+      res.status(201).json({
+        message: `${createdResponses.length} respostas de teste geradas com sucesso`,
+        count: createdResponses.length,
+        responses: createdResponses
+      });
+    } catch (error: any) {
+      console.error("Erro ao gerar respostas de teste:", error);
+      res.status(500).json({ 
+        message: "Erro ao gerar respostas de teste", 
+        error: error.message || "Erro desconhecido"
+      });
+    }
+  });
+
   // Dashboard statistics
   app.get("/api/dashboard", isAuthenticated, async (req, res) => {
     try {
@@ -407,7 +692,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Recent activities (last 5 assessments)
       const recentAssessments = userAssessments
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0))
         .slice(0, 5);
       
       res.json({
